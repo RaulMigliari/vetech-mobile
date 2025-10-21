@@ -1,98 +1,196 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { colors } from '@/src/constants/colors';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { router } from 'expo-router';
+import React from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { user, logout } = useAuth();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair',
+      'Tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/login');
+          }
+        },
+      ]
+    );
+  };
+
+  const quickActions = [
+    {
+      title: 'Agendar Consulta',
+      subtitle: 'Marque uma consulta para seu pet',
+      action: () => Alert.alert('Info', 'Funcionalidade em desenvolvimento'),
+      color: colors.primary,
+    },
+    {
+      title: 'Ver Consultas',
+      subtitle: 'Consultas agendadas',
+      action: () => Alert.alert('Info', 'Use a aba Consultas para ver suas consultas'),
+      color: colors.secondary,
+    },
+    {
+      title: 'Meus Pets',
+      subtitle: 'Gerencie seus animais',
+      action: () => Alert.alert('Info', 'Use a aba Pets para gerenciar seus animais'),
+      color: colors.primary,
+    },
+    {
+      title: 'Dieta com IA',
+      subtitle: 'Sugestões personalizadas',
+      action: () => Alert.alert('Info', 'Use a aba Dieta IA para análises personalizadas'),
+      color: colors.secondary,
+    },
+  ];
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.content}>
+        {/* Header de boas-vindas */}
+        <View style={styles.header}>
+          <Text style={styles.greeting}>Olá, {user?.nome || 'Usuário'}! 👋</Text>
+          <Text style={styles.subtitle}>
+            Bem-vindo de volta ao VeTech
+          </Text>
+        </View>
+
+        {/* Cards de ações rápidas */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ações Rápidas</Text>
+          <View style={styles.actionsGrid}>
+            {quickActions.map((action, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.actionCard, { borderLeftColor: action.color }]}
+                onPress={action.action}
+              >
+                <Text style={styles.actionTitle}>{action.title}</Text>
+                <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Resumo de informações */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Resumo</Text>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryText}>
+              🐕 Pets cadastrados: --
+            </Text>
+            <Text style={styles.summaryText}>
+              📅 Próxima consulta: --
+            </Text>
+            <Text style={styles.summaryText}>
+              🏥 Última visita: --
+            </Text>
+          </View>
+        </View>
+
+        {/* Botão de logout */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Sair da Conta</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-  stepContainer: {
-    gap: 8,
+  content: {
+    padding: 20,
+  },
+  header: {
+    marginBottom: 30,
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.darkGray,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: colors.gray,
+  },
+  section: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.darkGray,
+    marginBottom: 16,
+  },
+  actionsGrid: {
+    gap: 12,
+  },
+  actionCard: {
+    backgroundColor: colors.white,
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.darkGray,
+    marginBottom: 4,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+    color: colors.gray,
+  },
+  summaryCard: {
+    backgroundColor: colors.white,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  summaryText: {
+    fontSize: 16,
+    color: colors.darkGray,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  logoutButton: {
+    backgroundColor: colors.error,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  logoutText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
