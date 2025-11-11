@@ -15,6 +15,7 @@ export default function HomeScreen() {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
+    console.log('🔘 INDEX: Botão de logout foi clicado!');
     Alert.alert(
       'Sair',
       'Tem certeza que deseja sair?',
@@ -24,7 +25,10 @@ export default function HomeScreen() {
           text: 'Sair', 
           style: 'destructive',
           onPress: async () => {
+            console.log('🚪 INDEX: Usuário confirmou logout, iniciando...');
             await logout();
+            console.log('✅ INDEX: Logout concluído, forçando navegação...');
+            // Força navegação manual para login
             router.replace('/login');
           }
         },

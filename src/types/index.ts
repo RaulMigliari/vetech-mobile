@@ -10,12 +10,18 @@ export interface User {
 
 export interface Pet {
   id: string;
-  nome: string;
-  especie: string;
+  name: string; // Baseado na API: "name": "Rex"
+  species: string; // Baseado na API: "species": "Cachorro"
+  breed?: string; // Baseado na API: "breed": "Labrador"
+  age?: number; // Baseado na API: "age": 5
+  weight?: number; // Baseado na API: "weight": 25.5
+  medical_history?: string; // Baseado na API
+  // Manter compatibilidade com nomes em português
+  nome?: string;
+  especie?: string;
   raca?: string;
   idade?: number;
   peso?: number;
-  // Adicione outros campos conforme sua API
 }
 
 export interface Consulta {

@@ -4,15 +4,18 @@ import axios from 'axios';
 // [TODO: API AQUI]
 // Base URL: Cole aqui a URL base do seu backend
 // Exemplo: 'https://api.veterinaria.com' ou 'http://localhost:3000'
-const BASE_URL = 'http://localhost:8000';
+const BASE_URL = 'http://192.168.15.157:8000';
 
 // Cliente principal do Axios
 export const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000, // 10 segundos de timeout
+  timeout: 15000, // 15 segundos de timeout
   headers: {
     'Content-Type': 'application/json',
   },
+  validateStatus: function (status) {
+    return status >= 200 && status < 300; // Aceita respostas de 200 a 299
+  }
 });
 
 // Interceptor para adicionar automaticamente o token em todas as requisições

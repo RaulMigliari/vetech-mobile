@@ -36,6 +36,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="agendamento"
+        options={{
+          title: 'Agendar',
+          headerTitle: 'Agendar Consulta',
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="calendar.badge.plus" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="consultas"
         options={{
           title: 'Consultas',
@@ -49,6 +57,14 @@ export default function TabLayout() {
           title: 'Pets',
           headerTitle: 'Meus Pets',
           tabBarIcon: ({ color }) => <IconSymbol size={24} name="heart.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="historico"
+        options={{
+          title: 'Histórico',
+          headerTitle: 'Histórico de Saúde',
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="chart.line.uptrend.xyaxis" color={color} />,
         }}
       />
       <Tabs.Screen

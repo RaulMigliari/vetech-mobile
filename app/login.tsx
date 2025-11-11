@@ -60,14 +60,20 @@ export default function LoginScreen() {
 
     try {
       // Chama o serviço de login
+      console.log('🚀 Iniciando login com:', { email, senha: '***' });
       const response = await authService.login({ email, senha });
+      console.log('✅ Login bem-sucedido, resposta:', response);
 
       // Se chegou até aqui, o login foi bem-sucedido
       // Salva os dados no contexto (que também salva no AsyncStorage)
+      console.log('💾 Salvando no contexto...');
       await login(response.token, response.user);
+      console.log('✅ Dados salvos no contexto');
 
       // Redireciona para a tela principal (vamos criar depois)
+      console.log('🔄 Redirecionando para /(tabs)...');
       router.replace('/(tabs)');
+      console.log('✅ Redirecionamento executado');
       
     } catch (error: any) {
       // Trata diferentes tipos de erro

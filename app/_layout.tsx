@@ -16,10 +16,14 @@ function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
+    console.log('🔄 RootLayout: isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
+    
     if (!isLoading) {
       if (isAuthenticated) {
+        console.log('➡️ RootLayout: Autenticado, indo para /(tabs)');
         router.replace('/(tabs)');
       } else {
+        console.log('➡️ RootLayout: Não autenticado, indo para /login');
         router.replace('/login');
       }
     }
