@@ -1,5 +1,5 @@
 import { colors } from '@/src/constants/colors';
-import { CreateDietData, Diet, dietService } from '@/src/services/dietService';
+import { Diet, dietService } from '@/src/services/dietService';
 import { Pet, petService } from '@/src/services/petService';
 import React, { useEffect, useState } from 'react';
 import {
@@ -15,20 +15,32 @@ import {
   View,
 } from 'react-native';
 
+// Interface local para o formulário
+interface DietFormData {
+  animal_id: string;
+  petName: string;
+  peso: number;
+  idade: number;
+  atividade: 'baixa' | 'moderada' | 'alta';
+  objetivo: 'emagrecimento' | 'ganho_peso' | 'manutenção';
+  tipo_alimentacao: 'ração' | 'caseira' | 'mista';
+  observacoes: string;
+}
+
 export default function DietaScreen() {
   const [diets, setDiets] = useState<Diet[]>([]);
   const [pets, setPets] = useState<Pet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [formData, setFormData] = useState<CreateDietData>({
+  const [formData, setFormData] = useState<DietFormData>({
     animal_id: '',
-    peso_atual: 0,
-    peso_ideal: 0,
+    petName: '',
+    peso: 0,
     idade: 0,
-    atividade_fisica: 'moderada',
-    preferencias_alimentares: '',
-    restricoes_medicas: '',
+    atividade: 'moderada',
     objetivo: 'manutenção',
+    tipo_alimentacao: 'ração',
+    observacoes: '',
   });
 
   useEffect(() => {
@@ -59,7 +71,7 @@ export default function DietaScreen() {
         return;
       }
 
-      if (formData.peso_atual <= 0 || formData.peso_ideal <= 0 || formData.idade <= 0) {
+      if (formData.peso <= 0 || formData.idade <= 0) {
         Alert.alert('Atenção', 'Por favor, preencha todos os campos obrigatórios.');
         return;
       }
@@ -82,13 +94,13 @@ export default function DietaScreen() {
   const resetForm = () => {
     setFormData({
       animal_id: '',
-      peso_atual: 0,
-      peso_ideal: 0,
+      petName: '',
+      peso: 0,
       idade: 0,
-      atividade_fisica: 'moderada',
-      preferencias_alimentares: '',
-      restricoes_medicas: '',
+      atividade: 'moderada',
       objetivo: 'manutenção',
+      tipo_alimentacao: 'ração',
+      observacoes: '',
     });
   };
 
@@ -201,7 +213,11 @@ export default function DietaScreen() {
                           styles.petOption,
                           formData.animal_id === pet.id && styles.petOptionSelected
                         ]}
-                        onPress={() => setFormData(prev => ({ ...prev, animal_id: pet.id }))}
+                        onPress={() => setFormData(prev => ({ 
+                          ...prev, 
+                          animal_id: pet.id,
+                          petName: pet.name || 'Pet sem nome'
+                        }))}
                       >
                         <Text style={[
                           styles.petOptionText,
@@ -214,27 +230,14 @@ export default function DietaScreen() {
                   </ScrollView>
                 </View>
 
-                {/* Peso Atual */}
+                {/* Peso */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Peso Atual (kg) *</Text>
+                  <Text style={styles.inputLabel}>Peso (kg) *</Text>
                   <TextInput
                     style={styles.input}
-                    value={formData.peso_atual.toString()}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, peso_atual: parseFloat(text) || 0 }))}
+                    value={formData.peso > 0 ? formData.peso.toString() : ''}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, peso: parseFloat(text) || 0 }))}
                     placeholder="Ex: 25.5"
-                    keyboardType="decimal-pad"
-                    placeholderTextColor={colors.gray}
-                  />
-                </View>
-
-                {/* Peso Ideal */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Peso Ideal (kg) *</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.peso_ideal.toString()}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, peso_ideal: parseFloat(text) || 0 }))}
-                    placeholder="Ex: 20.0"
                     keyboardType="decimal-pad"
                     placeholderTextColor={colors.gray}
                   />
@@ -245,7 +248,7 @@ export default function DietaScreen() {
                   <Text style={styles.inputLabel}>Idade (anos) *</Text>
                   <TextInput
                     style={styles.input}
-                    value={formData.idade.toString()}
+                    value={formData.idade > 0 ? formData.idade.toString() : ''}
                     onChangeText={(text) => setFormData(prev => ({ ...prev, idade: parseInt(text) || 0 }))}
                     placeholder="Ex: 5"
                     keyboardType="number-pad"
@@ -266,13 +269,13 @@ export default function DietaScreen() {
                         key={option.key}
                         style={[
                           styles.optionButton,
-                          formData.atividade_fisica === option.key && styles.optionButtonSelected
+                          formData.atividade === option.key && styles.optionButtonSelected
                         ]}
-                        onPress={() => setFormData(prev => ({ ...prev, atividade_fisica: option.key as any }))}
+                        onPress={() => setFormData(prev => ({ ...prev, atividade: option.key as any }))}
                       >
                         <Text style={[
                           styles.optionButtonText,
-                          formData.atividade_fisica === option.key && styles.optionButtonTextSelected
+                          formData.atividade === option.key && styles.optionButtonTextSelected
                         ]}>
                           {option.label}
                         </Text>
@@ -288,8 +291,7 @@ export default function DietaScreen() {
                     {[
                       { key: 'emagrecimento', label: 'Emagrecimento' },
                       { key: 'ganho_peso', label: 'Ganho de Peso' },
-                      { key: 'manutenção', label: 'Manutenção' },
-                      { key: 'especial', label: 'Especial' }
+                      { key: 'manutenção', label: 'Manutenção' }
                     ].map((option) => (
                       <TouchableOpacity
                         key={option.key}
@@ -310,30 +312,44 @@ export default function DietaScreen() {
                   </View>
                 </View>
 
-                {/* Preferências Alimentares */}
+                {/* Tipo de Alimentação */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Preferências Alimentares</Text>
-                  <TextInput
-                    style={[styles.input, styles.textArea]}
-                    value={formData.preferencias_alimentares}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, preferencias_alimentares: text }))}
-                    placeholder="Ex: Gosta de frango, não gosta de vegetais verdes..."
-                    multiline
-                    numberOfLines={3}
-                    placeholderTextColor={colors.gray}
-                  />
+                  <Text style={styles.inputLabel}>Tipo de Alimentação</Text>
+                  <View style={styles.optionsRow}>
+                    {[
+                      { key: 'ração', label: 'Ração' },
+                      { key: 'caseira', label: 'Caseira' },
+                      { key: 'mista', label: 'Mista' }
+                    ].map((option) => (
+                      <TouchableOpacity
+                        key={option.key}
+                        style={[
+                          styles.optionButton,
+                          formData.tipo_alimentacao === option.key && styles.optionButtonSelected
+                        ]}
+                        onPress={() => setFormData(prev => ({ ...prev, tipo_alimentacao: option.key as any }))}
+                      >
+                        <Text style={[
+                          styles.optionButtonText,
+                          formData.tipo_alimentacao === option.key && styles.optionButtonTextSelected
+                        ]}>
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
 
-                {/* Restrições Médicas */}
+                {/* Observações */}
                 <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Restrições Médicas</Text>
+                  <Text style={styles.inputLabel}>Observações</Text>
                   <TextInput
                     style={[styles.input, styles.textArea]}
-                    value={formData.restricoes_medicas}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, restricoes_medicas: text }))}
-                    placeholder="Ex: Alergia a grãos, problemas renais..."
+                    value={formData.observacoes}
+                    onChangeText={(text) => setFormData(prev => ({ ...prev, observacoes: text }))}
+                    placeholder="Ex: Preferências alimentares, restrições médicas, alergias..."
                     multiline
-                    numberOfLines={3}
+                    numberOfLines={4}
                     placeholderTextColor={colors.gray}
                   />
                 </View>

@@ -37,18 +37,6 @@ export interface DailyProgress {
   refeicoes: DietProgress[];
 }
 
-// Interface para dados do formulário de nova dieta
-export interface CreateDietData {
-  animal_id: string;
-  peso_atual: number;
-  peso_ideal: number;
-  idade: number;
-  atividade_fisica: 'baixa' | 'moderada' | 'alta';
-  preferencias_alimentares?: string;
-  restricoes_medicas?: string;
-  objetivo: 'emagrecimento' | 'ganho_peso' | 'manutenção' | 'especial';
-}
-
 export const dietService = {
   // Listar dietas do cliente
   getDiets: async (): Promise<Diet[]> => {

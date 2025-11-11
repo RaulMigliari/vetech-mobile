@@ -48,7 +48,7 @@ export default function TabLayout() {
         options={{
           title: 'Consultas',
           headerTitle: 'Minhas Consultas',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="calendar" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="list.clipboard.fill" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -56,7 +56,7 @@ export default function TabLayout() {
         options={{
           title: 'Pets',
           headerTitle: 'Meus Pets',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="heart.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="pawprint.fill" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -64,7 +64,7 @@ export default function TabLayout() {
         options={{
           title: 'Histórico',
           headerTitle: 'Histórico de Saúde',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="chart.line.uptrend.xyaxis" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="heart.text.square.fill" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -72,7 +72,7 @@ export default function TabLayout() {
         options={{
           title: 'Dieta IA',
           headerTitle: 'Dieta com IA',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="brain" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="brain.head.profile" color={color} />,
         }}
       />
       <Tabs.Screen
