@@ -67,9 +67,15 @@ export const profileService = {
   updateProfile: async (data: UpdateProfileData): Promise<ClientProfile> => {
     try {
       console.log('📝 Atualizando perfil do cliente...', data);
-      // Com base no Postman, o endpoint para atualizar é PATCH /api/v1/client/animal
-      const response = await apiClient.patch('/api/v1/client/animal', data);
       
+      // Endpoint correto da documentação: PUT /api/v1/auth/clinic/profile
+      // Converte tutor_name para name que é o que a API espera
+      const requestBody = {
+        name: data.tutor_name,
+        phone: data.phone,
+      };
+      
+      const response = await apiClient.put('/api/v1/auth/clinic/profile', requestBody);
       console.log('✅ Perfil atualizado com sucesso');
       return response.data;
     } catch (error) {

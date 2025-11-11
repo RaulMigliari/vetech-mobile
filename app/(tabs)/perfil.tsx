@@ -1,6 +1,7 @@
 import { colors } from '@/src/constants/colors';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { ClientProfile, profileService, UpdateProfileData } from '@/src/services/profileService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -252,11 +253,11 @@ export default function PerfilScreen() {
       
       const updateData: UpdateProfileData = {};
       
-      if (editForm.tutor_name && editForm.tutor_name !== profile?.name) {
-        updateData.tutor_name = editForm.tutor_name;
+      if (editForm.tutor_name && editForm.tutor_name.trim() !== profile?.name) {
+        updateData.tutor_name = editForm.tutor_name.trim();
       }
-      if (editForm.phone && editForm.phone !== profile?.phone) {
-        updateData.phone = editForm.phone;
+      if (editForm.phone && editForm.phone.trim() !== profile?.phone) {
+        updateData.phone = editForm.phone.trim();
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -270,6 +271,12 @@ export default function PerfilScreen() {
       
       setProfile(updatedProfile);
       setEditModalVisible(false);
+      
+      // Atualiza também os dados no AsyncStorage se houver mudança no nome
+      if (updateData.tutor_name && user) {
+        const updatedUser = { ...user, nome: updatedProfile.name };
+        await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+      }
       
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
       console.log('✅ Perfil atualizado');

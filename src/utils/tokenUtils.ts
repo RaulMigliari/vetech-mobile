@@ -28,8 +28,20 @@ export function decodeJWTPayload(token: string): JWTPayload | null {
     // A segunda parte é o payload (base64 encoded)
     const payload = parts[1];
     
-    // Decodifica de base64
-    const decodedPayload = atob(payload);
+    // Decodifica de base64 com suporte a UTF-8
+    // Substitui caracteres especiais do base64url
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    
+    // Adiciona padding se necessário
+    const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+    
+    // Decodifica com suporte a UTF-8
+    const decodedPayload = decodeURIComponent(
+      atob(padded)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
     
     // Parse do JSON
     const parsedPayload: JWTPayload = JSON.parse(decodedPayload);
