@@ -1,19 +1,20 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { colors } from '../src/constants/colors';
 import { useAuth } from '../src/contexts/AuthContext';
 import { authService } from '../src/services/authService';
+import { profileService } from '../src/services/profileService';
 
 export default function LoginScreen() {
   // Estados para controlar o formulário
@@ -64,10 +65,28 @@ export default function LoginScreen() {
       const response = await authService.login({ email, senha });
       console.log('✅ Login bem-sucedido, resposta:', response);
 
-      // Se chegou até aqui, o login foi bem-sucedido
-      // Salva os dados no contexto (que também salva no AsyncStorage)
-      console.log('💾 Salvando no contexto...');
-      await login(response.token, response.user);
+      // Busca o perfil completo do usuário para obter o nome correto
+      try {
+        console.log('👤 Buscando perfil completo do usuário...');
+        const profile = await profileService.getProfile();
+        console.log('✅ Perfil obtido:', profile);
+        
+        // Atualiza os dados do usuário com o nome correto do perfil
+        const updatedUser = {
+          ...response.user,
+          nome: profile.name || response.user.nome,
+          telefone: profile.phone || response.user.telefone,
+        };
+        
+        // Salva os dados atualizados no contexto
+        console.log('💾 Salvando dados atualizados no contexto...', updatedUser);
+        await login(response.token, updatedUser);
+      } catch (profileError) {
+        console.log('⚠️ Erro ao buscar perfil, usando dados do login:', profileError);
+        // Se falhar ao buscar o perfil, usa os dados do login mesmo
+        await login(response.token, response.user);
+      }
+
       console.log('✅ Dados salvos no contexto');
 
       // Redireciona para a tela principal (vamos criar depois)
