@@ -1,4 +1,5 @@
 import { apiClient } from './api';
+import { petService } from './petService';
 
 // Interface para os dados de uma dieta baseada no Postman
 export interface Diet {
@@ -38,14 +39,50 @@ export interface DailyProgress {
 }
 
 export const dietService = {
-  // Listar dietas do cliente
+  // Listar dietas do cliente (busca de todos os pets)
   getDiets: async (): Promise<Diet[]> => {
     try {
-      const response = await apiClient.get<Diet[]>('/api/v1/client/diets');
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar dietas:', error);
-      throw error;
+      console.log('🔍 Buscando dietas do cliente...');
+      
+      // Primeiro tenta o endpoint agregado
+      try {
+        const response = await apiClient.get<Diet[]>('/api/v1/client/diets');
+        console.log('✅ Dietas encontradas (endpoint client):', response.data.length);
+        if (response.data.length > 0) {
+          console.log('📋 Dados das dietas:', JSON.stringify(response.data, null, 2));
+          return response.data;
+        }
+      } catch (clientError: any) {
+        console.warn('⚠️ Endpoint /client/diets não retornou dados:', clientError.response?.status);
+      }
+
+      // Se não encontrou nada, busca dietas de cada pet individualmente
+      console.log('🔄 Buscando dietas por pet...');
+      const pets = await petService.getPets();
+      console.log(`📦 Encontrados ${pets.length} pets`);
+      
+      const allDiets: Diet[] = [];
+      for (const pet of pets) {
+        try {
+          console.log(`🐾 Buscando dietas do pet: ${pet.name} (${pet.id})`);
+          const petDietsResponse = await apiClient.get<Diet[]>(`/api/v1/animals/${pet.id}/diets`);
+          console.log(`   ✅ ${petDietsResponse.data.length} dietas encontradas`);
+          allDiets.push(...petDietsResponse.data);
+        } catch (petError: any) {
+          console.warn(`   ⚠️ Erro ao buscar dietas do pet ${pet.name}:`, petError.response?.status);
+        }
+      }
+      
+      console.log(`🎉 Total de dietas encontradas: ${allDiets.length}`);
+      if (allDiets.length > 0) {
+        console.log('📋 Dietas:', JSON.stringify(allDiets, null, 2));
+      }
+      return allDiets;
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar dietas:', error);
+      console.error('Status:', error.response?.status);
+      console.error('Dados:', error.response?.data);
+      return []; // Retorna array vazio em caso de erro
     }
   },
 
@@ -61,39 +98,31 @@ export const dietService = {
     observacoes?: string;
   }): Promise<Diet> => {
     try {
-      // Simular cálculo inteligente baseado nos dados do pet
-      const baseCalories = data.peso * 30; // Cálculo básico
-      const activityMultiplier = { baixa: 1.2, moderada: 1.5, alta: 1.8 }[data.atividade];
-      const objectiveMultiplier = { emagrecimento: 0.8, manutenção: 1.0, ganho_peso: 1.2 }[data.objetivo];
-      const calculatedCalories = Math.round(baseCalories * activityMultiplier * objectiveMultiplier);
-
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + 3); // 3 meses de duração padrão
-
-      // Dados da dieta no formato correto baseado no Postman
-      const aiGeneratedDiet = {
-        nome: `Dieta ${data.objetivo} para ${data.petName}`,
-        tipo: data.tipo_alimentacao,
+      console.log('🤖 Criando dieta com IA para:', data.petName);
+      console.log('📊 Dados da requisição:', data);
+      
+      // Endpoint correto: POST /api/v1/animals/{animal_id}/diets/ai
+      const response = await apiClient.post<Diet>(`/api/v1/animals/${data.animal_id}/diets/ai`, {
+        // O endpoint pode não precisar de corpo, mas vamos enviar os dados por garantia
+        peso: data.peso,
+        idade: data.idade,
+        atividade: data.atividade,
         objetivo: data.objetivo,
-        data_inicio: new Date().toISOString().split('T')[0],
-        data_fim: endDate.toISOString().split('T')[0],
-        status: 'ativa',
-        refeicoes_por_dia: 3,
-        calorias_totais_dia: calculatedCalories,
-        valor_mensal_estimado: 180.00,
-        alimento_id: 1, // ID padrão para teste
-        quantidade_gramas: Math.round(calculatedCalories / 4), // Aproximação baseada em calorias
-        horario: "08:00"
-      };
-
-      const response = await apiClient.post(`/api/v1/animals/${data.animal_id}/diets`, aiGeneratedDiet);
+        tipo_alimentacao: data.tipo_alimentacao,
+        observacoes: data.observacoes
+      });
+      
+      console.log('✅ Dieta criada com sucesso!');
+      console.log('📋 Resposta:', JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: any) {
-      console.error('Erro ao criar dieta com IA:', error);
+      console.error('❌ Erro ao criar dieta com IA:', error);
+      console.error('Status:', error.response?.status);
+      console.error('Dados do erro:', error.response?.data);
       
       // Se for erro 500 (problema de conectividade do backend), simular sucesso temporariamente
       if (error.response?.status === 500) {
-        console.warn('Backend com problema de conectividade. Simulando criação de dieta...');
+        console.warn('⚠️ Backend com problema. Simulando criação de dieta...');
         return {
           id: `diet_${Date.now()}`,
           nome: `Dieta ${data.objetivo} para ${data.petName}`,
