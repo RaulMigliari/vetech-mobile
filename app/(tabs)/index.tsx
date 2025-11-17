@@ -2,8 +2,9 @@ import { colors } from '@/src/constants/colors';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { consultationService } from '@/src/services/consultationService';
 import { petService } from '@/src/services/petService';
+import { profileService } from '@/src/services/profileService';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,7 +22,8 @@ interface DashboardData {
 }
 
 export default function HomeScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, login } = useAuth();
+  const [userName, setUserName] = useState(user?.nome || 'Usuário');
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalPets: 0,
     nextConsultation: null,
@@ -29,11 +31,35 @@ export default function HomeScreen() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  const loadUserProfile = React.useCallback(async () => {
+    try {
+      console.log('👤 INDEX: Carregando perfil do usuário...');
+      const profile = await profileService.getProfile();
+      console.log('✅ INDEX: Perfil carregado:', profile);
+      
+      if (profile.name && profile.name !== 'Usuário') {
+        setUserName(profile.name);
+        
+        // Atualiza também o contexto se necessário
+        if (user && profile.name !== user.nome) {
+          console.log('🔄 INDEX: Atualizando nome no contexto...');
+          const updatedUser = { ...user, nome: profile.name };
+          // Não precisa do token pois já está logado
+          const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+          const token = await AsyncStorage.getItem('userToken');
+          if (token) {
+            await login(token, updatedUser);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ INDEX: Erro ao carregar perfil:', error);
+      // Mantém o nome do contexto se falhar
+      setUserName(user?.nome || 'Usuário');
+    }
+  }, [user, login]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = React.useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -68,7 +94,12 @@ export default function HomeScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  React.useEffect(() => {
+    loadDashboardData();
+    loadUserProfile();
+  }, [loadDashboardData, loadUserProfile]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -136,7 +167,7 @@ export default function HomeScreen() {
       <View style={styles.content}>
         {/* Header de boas-vindas */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Olá, {user?.nome || 'Usuário'}! 👋</Text>
+          <Text style={styles.greeting}>Olá, {userName}! 👋</Text>
           <Text style={styles.subtitle}>
             Bem-vindo de volta ao VeTech
           </Text>

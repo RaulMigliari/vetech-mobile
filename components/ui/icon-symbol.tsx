@@ -23,6 +23,7 @@ const MAPPING = {
   'pawprint.fill': 'pets',
   'heart.text.square.fill': 'favorite',
   'brain.head.profile': 'psychology',
+  'trophy.fill': 'emoji-events',
   'person.fill': 'person',
 } as IconMapping;
 

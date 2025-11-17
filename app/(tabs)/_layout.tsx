@@ -76,6 +76,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="recompensas"
+        options={{
+          title: 'Recompensas',
+          headerTitle: 'Recompensas',
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="trophy.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="perfil"
         options={{
           title: 'Perfil',
