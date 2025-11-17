@@ -3,8 +3,10 @@ import axios from 'axios';
 
 // [TODO: API AQUI]
 // Base URL: Cole aqui a URL base do seu backend
-// Exemplo: 'https://api.veterinaria.com' ou 'http://localhost:3000'
-const BASE_URL = 'http://192.168.15.157:8000';
+// Para emulador Android: use 'http://10.0.2.2:8000'
+// Para celular físico: use 'http://192.168.15.157:8000'
+// Para iOS Simulator: use 'http://localhost:8000'
+const BASE_URL = 'http://10.0.2.2:8000';
 
 // Cliente principal do Axios
 export const apiClient = axios.create({
