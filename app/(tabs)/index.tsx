@@ -1,8 +1,11 @@
 import { colors } from '@/src/constants/colors';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { consultationService } from '@/src/services/consultationService';
+import { petService } from '@/src/services/petService';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -11,8 +14,70 @@ import {
   View,
 } from 'react-native';
 
+interface DashboardData {
+  totalPets: number;
+  nextConsultation: string | null;
+  lastVisit: string | null;
+}
+
 export default function HomeScreen() {
   const { user, logout } = useAuth();
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    totalPets: 0,
+    nextConsultation: null,
+    lastVisit: null,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Busca pets
+      const pets = await petService.getPets();
+      
+      // Busca consultas
+      const consultations = await consultationService.getConsultations();
+      
+      // Processa próxima consulta (consultas futuras)
+      const now = new Date();
+      const futureConsultations = consultations
+        .filter(c => new Date(c.date) > now)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Processa última visita (consultas passadas)
+      const pastConsultations = consultations
+        .filter(c => new Date(c.date) <= now)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      setDashboardData({
+        totalPets: pets.length,
+        nextConsultation: futureConsultations.length > 0 
+          ? formatDate(futureConsultations[0].date)
+          : null,
+        lastVisit: pastConsultations.length > 0 
+          ? formatDate(pastConsultations[0].date)
+          : null,
+      });
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  };
 
   const handleLogout = () => {
     console.log('🔘 INDEX: Botão de logout foi clicado!');
@@ -28,7 +93,6 @@ export default function HomeScreen() {
             console.log('🚪 INDEX: Usuário confirmou logout, iniciando...');
             await logout();
             console.log('✅ INDEX: Logout concluído, forçando navegação...');
-            // Força navegação manual para login
             router.replace('/login');
           }
         },
@@ -40,25 +104,29 @@ export default function HomeScreen() {
     {
       title: 'Agendar Consulta',
       subtitle: 'Marque uma consulta para seu pet',
-      action: () => Alert.alert('Info', 'Funcionalidade em desenvolvimento'),
+      action: () => router.push('/(tabs)/agendamento'),
+      icon: '📅',
       color: colors.primary,
     },
     {
       title: 'Ver Consultas',
       subtitle: 'Consultas agendadas',
-      action: () => Alert.alert('Info', 'Use a aba Consultas para ver suas consultas'),
+      action: () => router.push('/(tabs)/consultas'),
+      icon: '🏥',
       color: colors.secondary,
     },
     {
       title: 'Meus Pets',
       subtitle: 'Gerencie seus animais',
-      action: () => Alert.alert('Info', 'Use a aba Pets para gerenciar seus animais'),
+      action: () => router.push('/(tabs)/pets'),
+      icon: '🐾',
       color: colors.primary,
     },
     {
       title: 'Dieta com IA',
       subtitle: 'Sugestões personalizadas',
-      action: () => Alert.alert('Info', 'Use a aba Dieta IA para análises personalizadas'),
+      action: () => router.push('/(tabs)/dieta'),
+      icon: '🤖',
       color: colors.secondary,
     },
   ];
@@ -84,8 +152,13 @@ export default function HomeScreen() {
                 style={[styles.actionCard, { borderLeftColor: action.color }]}
                 onPress={action.action}
               >
-                <Text style={styles.actionTitle}>{action.title}</Text>
-                <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
+                <View style={styles.actionContent}>
+                  <Text style={styles.actionIcon}>{action.icon}</Text>
+                  <View style={styles.actionTextContainer}>
+                    <Text style={styles.actionTitle}>{action.title}</Text>
+                    <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
+                  </View>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -94,17 +167,48 @@ export default function HomeScreen() {
         {/* Resumo de informações */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Resumo</Text>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryText}>
-              🐕 Pets cadastrados: --
-            </Text>
-            <Text style={styles.summaryText}>
-              📅 Próxima consulta: --
-            </Text>
-            <Text style={styles.summaryText}>
-              🏥 Última visita: --
-            </Text>
-          </View>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.loadingText}>Carregando dados...</Text>
+            </View>
+          ) : (
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryIcon}>🐕</Text>
+                <View style={styles.summaryTextContainer}>
+                  <Text style={styles.summaryLabel}>Pets cadastrados</Text>
+                  <Text style={styles.summaryValue}>
+                    {dashboardData.totalPets > 0 ? dashboardData.totalPets : 'Nenhum'}
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={styles.summaryDivider} />
+              
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryIcon}>📅</Text>
+                <View style={styles.summaryTextContainer}>
+                  <Text style={styles.summaryLabel}>Próxima consulta</Text>
+                  <Text style={styles.summaryValue}>
+                    {dashboardData.nextConsultation || 'Nenhuma agendada'}
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={styles.summaryDivider} />
+              
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryIcon}>🏥</Text>
+                <View style={styles.summaryTextContainer}>
+                  <Text style={styles.summaryLabel}>Última visita</Text>
+                  <Text style={styles.summaryValue}>
+                    {dashboardData.lastVisit || 'Nenhum registro'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Botão de logout */}
@@ -160,6 +264,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  actionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionIcon: {
+    fontSize: 28,
+  },
+  actionTextContainer: {
+    flex: 1,
+  },
   actionTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -167,6 +282,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   actionSubtitle: {
+    fontSize: 14,
+    color: colors.gray,
+  },
+  loadingContainer: {
+    backgroundColor: colors.white,
+    padding: 32,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
     fontSize: 14,
     color: colors.gray,
   },
@@ -179,6 +305,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  summaryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
+  },
+  summaryIcon: {
+    fontSize: 24,
+  },
+  summaryTextContainer: {
+    flex: 1,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: colors.gray,
+    marginBottom: 2,
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.darkGray,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: colors.lightGray,
+    marginVertical: 8,
   },
   summaryText: {
     fontSize: 16,
