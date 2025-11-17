@@ -102,4 +102,72 @@ export const consultationService = {
       throw error;
     }
   },
+
+  // Buscar horários disponíveis para uma data específica
+  getAvailableTimeSlots: async (date: string): Promise<string[]> => {
+    try {
+      console.log(`🔍 Buscando horários ocupados para ${date}...`);
+      console.log(`📅 Formato da data: ${date} (tipo: ${typeof date})`);
+      
+      // Busca todos os agendamentos (o filtro da API pode não estar funcionando)
+      const response = await apiClient.get('/api/v1/appointments');
+      const allAppointments = response.data as Consultation[];
+      console.log(`� Total de agendamentos do cliente: ${allAppointments.length}`);
+      
+      // SEMPRE filtra manualmente pela data, já que o filtro da API pode não funcionar
+      const targetDate = date.split('T')[0]; // Garante formato YYYY-MM-DD
+      const filteredAppointments = allAppointments.filter(apt => {
+        const aptDate = apt.date.split('T')[0];
+        return aptDate === targetDate;
+      });
+      
+      console.log(`🔍 Agendamentos filtrados para ${targetDate}: ${filteredAppointments.length}`);
+      
+      if (filteredAppointments.length > 0) {
+        console.log(`📋 Detalhes dos agendamentos:`);
+        filteredAppointments.forEach(apt => {
+          console.log(`   🔸 ${apt.date} ${apt.start_time} - Status: ${apt.status}`);
+        });
+      }
+      
+      // Extrai os horários ocupados (start_time) - exclui cancelados
+      const occupiedSlots = filteredAppointments
+        .filter(apt => apt.status !== 'cancelled')
+        .map(apt => {
+          // Normaliza o formato do horário (remove segundos se existir)
+          const time = apt.start_time;
+          if (time && time.length > 5) {
+            return time.substring(0, 5); // "08:30:00" -> "08:30"
+          }
+          return time;
+        })
+        .filter((time): time is string => time !== null);
+      
+      console.log(`⏰ Horários ocupados para ${targetDate} (${occupiedSlots.length}):`, occupiedSlots);
+      
+      // Define todos os horários possíveis
+      const allTimeSlots = [
+        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+        '11:00', '11:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00', '17:30'
+      ];
+      
+      // Retorna apenas os horários disponíveis (não ocupados)
+      const availableSlots = allTimeSlots.filter(slot => !occupiedSlots.includes(slot));
+      
+      console.log(`✅ Horários disponíveis para ${targetDate} (${availableSlots.length}):`, availableSlots);
+      
+      return availableSlots;
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar horários disponíveis:', error);
+      
+      // Em caso de erro, retorna todos os horários (fallback)
+      console.warn('⚠️ Usando todos os horários como fallback');
+      return [
+        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+        '11:00', '11:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00', '17:30'
+      ];
+    }
+  },
 };

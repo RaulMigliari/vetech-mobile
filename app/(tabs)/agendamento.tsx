@@ -3,15 +3,15 @@ import { consultationService, CreateAppointmentData } from '@/src/services/consu
 import { Pet, petService } from '@/src/services/petService';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 export default function AgendamentoScreen() {
@@ -19,6 +19,8 @@ export default function AgendamentoScreen() {
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [showPetModal, setShowPetModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [loadingTimeSlots, setLoadingTimeSlots] = useState(false);
   const [formData, setFormData] = useState({
     date: '',
     start_time: '',
@@ -40,6 +42,52 @@ export default function AgendamentoScreen() {
       Alert.alert('Erro', 'Não foi possível carregar seus pets');
     }
   };
+
+  const loadAvailableTimeSlots = async (date: string) => {
+    try {
+      setLoadingTimeSlots(true);
+      console.log(`🔄 Carregando horários para nova data: ${date}`);
+      
+      const slots = await consultationService.getAvailableTimeSlots(date);
+      console.log(`📊 Slots disponíveis recebidos para ${date}:`, slots);
+      
+      setAvailableTimeSlots(slots);
+      
+      // Se o horário selecionado não está mais disponível, limpa a seleção
+      if (formData.start_time && !slots.includes(formData.start_time)) {
+        console.log(`⚠️ Horário ${formData.start_time} não está disponível para ${date}, limpando seleção`);
+        setFormData(prev => ({ ...prev, start_time: '' }));
+        Alert.alert(
+          'Horário Indisponível',
+          'O horário selecionado não está mais disponível. Por favor, escolha outro.'
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao carregar horários:', error);
+      // Em caso de erro, permite todos os horários
+      setAvailableTimeSlots(timeSlots);
+    } finally {
+      setLoadingTimeSlots(false);
+    }
+  };
+
+  useEffect(() => {
+    // Quando uma data for selecionada, busca os horários disponíveis
+    if (formData.date) {
+      console.log(`📅 Data selecionada mudou para: ${formData.date}`);
+      // Limpa os horários disponíveis antes de buscar novos
+      setAvailableTimeSlots([]);
+      // Limpa o horário selecionado ao mudar de data
+      if (formData.start_time) {
+        setFormData(prev => ({ ...prev, start_time: '' }));
+      }
+      loadAvailableTimeSlots(formData.date);
+    } else {
+      console.log(`🔄 Nenhuma data selecionada, limpando horários`);
+      setAvailableTimeSlots([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.date]);
 
   const serviceTypes = [
     'Consulta Geral',
@@ -182,22 +230,53 @@ export default function AgendamentoScreen() {
         {/* Seleção do Horário */}
         <View style={styles.section}>
           <Text style={styles.label}>Horário *</Text>
-          <View style={styles.timeGrid}>
-            {timeSlots.map((time) => {
-              const isSelected = formData.start_time === time;
-              return (
-                <TouchableOpacity
-                  key={time}
-                  style={[styles.timeSlot, isSelected && styles.timeSlotSelected]}
-                  onPress={() => setFormData({ ...formData, start_time: time })}
-                >
-                  <Text style={[styles.timeText, isSelected && styles.timeTextSelected]}>
-                    {time}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          {!formData.date ? (
+            <Text style={styles.infoText}>Selecione uma data primeiro</Text>
+          ) : loadingTimeSlots ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.loadingText}>Verificando disponibilidade...</Text>
+            </View>
+          ) : (
+            <View style={styles.timeGrid}>
+              {timeSlots.map((time) => {
+                const isSelected = formData.start_time === time;
+                // Verifica se o horário está disponível (se não está na lista, considera disponível como fallback)
+                const isAvailable = availableTimeSlots.length > 0 ? availableTimeSlots.includes(time) : true;
+                
+                return (
+                  <TouchableOpacity
+                    key={time}
+                    style={[
+                      styles.timeSlot,
+                      isSelected && styles.timeSlotSelected,
+                      !isAvailable && styles.timeSlotUnavailable
+                    ]}
+                    onPress={() => {
+                      if (isAvailable) {
+                        console.log(`⏰ Horário selecionado: ${time} para data ${formData.date}`);
+                        setFormData({ ...formData, start_time: time });
+                      } else {
+                        Alert.alert('Horário Indisponível', 'Este horário já está ocupado. Por favor, escolha outro.');
+                      }
+                    }}
+                    disabled={!isAvailable}
+                  >
+                    <Text style={[
+                      styles.timeText,
+                      isSelected && styles.timeTextSelected,
+                      !isAvailable && styles.timeTextUnavailable
+                    ]}>
+                      {time}
+                    </Text>
+                    {!isAvailable && (
+                      <Text style={styles.unavailableLabel}>Ocupado</Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Tipo de Serviço */}
@@ -396,6 +475,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
+  timeSlotUnavailable: {
+    backgroundColor: colors.lightGray,
+    borderColor: colors.gray,
+    opacity: 0.5,
+  },
   timeText: {
     fontSize: 14,
     color: colors.black,
@@ -403,6 +487,34 @@ const styles = StyleSheet.create({
   },
   timeTextSelected: {
     color: colors.white,
+  },
+  timeTextUnavailable: {
+    color: colors.gray,
+    textDecorationLine: 'line-through',
+  },
+  unavailableLabel: {
+    fontSize: 10,
+    color: colors.error,
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: colors.gray,
+  },
+  infoText: {
+    fontSize: 14,
+    color: colors.gray,
+    textAlign: 'center',
+    padding: 20,
+    fontStyle: 'italic',
   },
   serviceGrid: {
     flexDirection: 'row',
