@@ -115,11 +115,63 @@ export default function DietaScreen() {
       
       <Text style={styles.dietObjective}>Objetivo: {item.objetivo}</Text>
       <Text style={styles.dietInfo}>Tipo: {item.tipo}</Text>
+      
+      {/* Informações de Alimentação */}
+      {(item.alimento || item.alimento_id) && (
+        <View style={styles.foodSection}>
+          <Text style={styles.foodTitle}>🍖 Informações de Alimentação</Text>
+          
+          {item.alimento ? (
+            <>
+              <Text style={styles.foodName}>{item.alimento.nome}</Text>
+              {item.alimento.tipo && (
+                <Text style={styles.foodDetail}>Tipo: {item.alimento.tipo}</Text>
+              )}
+              {item.alimento.marca && (
+                <Text style={styles.foodDetail}>Marca: {item.alimento.marca}</Text>
+              )}
+              {item.quantidade_gramas && (
+                <Text style={styles.foodDetail}>Quantidade: {item.quantidade_gramas}g por refeição</Text>
+              )}
+              {item.horario && (
+                <Text style={styles.foodDetail}>Horário(s): {item.horario}</Text>
+              )}
+              {item.alimento.calorias_por_100g && (
+                <Text style={styles.foodDetail}>
+                  {item.alimento.calorias_por_100g} kcal/100g
+                </Text>
+              )}
+              {item.alimento.proteinas && (
+                <Text style={styles.foodDetail}>Proteínas: {item.alimento.proteinas}g/100g</Text>
+              )}
+            </>
+          ) : (
+            <>
+              <Text style={styles.foodDetail}>Alimento ID: {item.alimento_id}</Text>
+              {item.quantidade_gramas && (
+                <Text style={styles.foodDetail}>Quantidade: {item.quantidade_gramas}g por refeição</Text>
+              )}
+              {item.horario && (
+                <Text style={styles.foodDetail}>Horário(s): {item.horario}</Text>
+              )}
+            </>
+          )}
+        </View>
+      )}
+      
       <Text style={styles.dietInfo}>Refeições/dia: {item.refeicoes_por_dia}</Text>
-      <Text style={styles.dietInfo}>Calorias/dia: {item.calorias_totais_dia}</Text>
+      <Text style={styles.dietInfo}>Calorias/dia: {item.calorias_totais_dia} kcal</Text>
+      
+      {item.data_inicio && item.data_fim && (
+        <View style={styles.periodSection}>
+          <Text style={styles.periodText}>
+            📅 {new Date(item.data_inicio).toLocaleDateString('pt-BR')} até {new Date(item.data_fim).toLocaleDateString('pt-BR')}
+          </Text>
+        </View>
+      )}
       
       {item.observacoes && (
-        <Text style={styles.dietNotes}>{item.observacoes}</Text>
+        <Text style={styles.dietNotes}>💡 {item.observacoes}</Text>
       )}
     </View>
   );
@@ -506,6 +558,43 @@ const styles = StyleSheet.create({
     color: colors.darkGray,
     fontStyle: 'italic',
     marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.lightGray,
+  },
+  foodSection: {
+    backgroundColor: colors.primaryOverlay,
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+  foodTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+    marginBottom: 8,
+  },
+  foodName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.darkGray,
+    marginBottom: 4,
+  },
+  foodDetail: {
+    fontSize: 13,
+    color: colors.gray,
+    marginBottom: 2,
+  },
+  periodSection: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.lightGray,
+  },
+  periodText: {
+    fontSize: 13,
+    color: colors.gray,
+    fontStyle: 'italic',
   },
   loadingContainer: {
     padding: 40,

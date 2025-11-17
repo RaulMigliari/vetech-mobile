@@ -1,6 +1,18 @@
 import { apiClient } from './api';
 import { petService } from './petService';
 
+// Interface para alimento
+export interface Food {
+  id: number;
+  nome: string;
+  tipo: string;
+  marca?: string;
+  calorias_por_100g?: number;
+  proteinas?: number;
+  gorduras?: number;
+  carboidratos?: number;
+}
+
 // Interface para os dados de uma dieta baseada no Postman
 export interface Diet {
   id?: string;
@@ -14,9 +26,14 @@ export interface Diet {
   calorias_totais_dia: number;
   valor_mensal_estimado: number;
   animal_id?: string;
+  alimento_id?: number;
+  quantidade_gramas?: number;
+  horario?: string;
   observacoes?: string;
   created_at?: string;
   updated_at?: string;
+  // Dados expandidos (para quando o endpoint estiver disponível)
+  alimento?: Food | null;
 }
 
 // Interface para dados de progresso de dieta
@@ -39,6 +56,24 @@ export interface DailyProgress {
 }
 
 export const dietService = {
+  // Buscar detalhes de um alimento da tabela alimentos_base
+  // NOTA: Endpoint /api/v1/alimentos-base/{id} espera UUID, não o alimento_id numérico
+  // Por enquanto retorna null até o backend expor endpoint correto
+  getFood: async (foodId: number): Promise<Food | null> => {
+    console.log(`ℹ️ alimento_id ${foodId} não pode ser buscado (endpoint espera UUID)`);
+    return null;
+    
+    /* Código comentado até backend disponibilizar endpoint correto
+    try {
+      const response = await apiClient.get<Food>(`/api/v1/alimentos-base/${foodId}`);
+      return response.data;
+    } catch (error: any) {
+      console.warn(`⚠️ Erro ao buscar alimento ${foodId}:`, error.response?.status);
+      return null;
+    }
+    */
+  },
+
   // Listar dietas do cliente (busca de todos os pets)
   getDiets: async (): Promise<Diet[]> => {
     try {
@@ -77,6 +112,9 @@ export const dietService = {
       if (allDiets.length > 0) {
         console.log('📋 Dietas:', JSON.stringify(allDiets, null, 2));
       }
+      
+      // NOTA: Enriquecimento de alimentos desabilitado até backend expor endpoint correto
+      // Os alimento_id (1, 2) não correspondem aos UUIDs da tabela alimentos_base
       return allDiets;
     } catch (error: any) {
       console.error('❌ Erro ao buscar dietas:', error);
